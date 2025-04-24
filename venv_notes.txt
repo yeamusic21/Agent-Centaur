@@ -1,0 +1,7 @@
+Python Version: 3.12.3
+
+Create Virtual Environment:
+python -m venv .venv
+
+Activate Env on Ubuntu:
+source ./.venv/bin/activate
