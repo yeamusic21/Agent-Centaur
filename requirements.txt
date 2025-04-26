@@ -5,10 +5,13 @@ docx2txt
 pyarrow
 python-doctr[torch,viz,html,contrib]
 torch
-lanchain-community
+langchain-community
 sentence-transformers
 langgraph
 langchain_openai
 pandas
 ipython
 langchain-huggingface
+requests
+beautifulsoup4
+newspaper3k

@@ -5,7 +5,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from llms.embd import embedding_model
 import pyarrow as pa
 from ocr import ocr
-
+from get_news import search_and_scrape
 
 def run_ingestion():
     # Ensure LanceDB directory exists
@@ -14,11 +14,12 @@ def run_ingestion():
     # Initialize LanceDB
     db = lancedb.connect(dbfs_local_path)
 
+    print("Gathering docs ...")
     docs = []
-    for file_ob in os.listdir("./uploads"):
+    for file_ob in os.listdir("./docs"):
         file_ob_name_only = file_ob.split(".")[0]
         file_ob_txt = f"{file_ob_name_only}.txt"
-        res_str = ocr("./uploads/"+file_ob)
+        res_str = ocr("./docs/"+file_ob)
         # Open the file in write mode
         with open("./ocr_results/"+file_ob_txt, "w") as file:
             # Write the string to the file
@@ -32,6 +33,18 @@ def run_ingestion():
         #     docx_loader = Docx2txtLoader("./uploads"+file_ob)
         #     docs.extend(docx_loader.load())
 
+    rint("Gathering news ...")
+    articles = search_and_scrape()
+    for article in articles:
+        file_ob_txt = article['title']+".txt"
+        with open("./ocr_results/"+file_ob_txt, "w") as file:
+            # Write the string to the file
+            file.write(article['text'])
+        txt_loader = TextLoader("./ocr_results/"+file_ob_txt)
+        docs.extend(txt_loader.load())
+
+    
+    print("Creating vector db table ...")
     # Create a table in LanceDB if not exists
     TABLE_NAME = "vector_store"
     if TABLE_NAME not in db.table_names():
@@ -44,20 +57,20 @@ def run_ingestion():
     else:
         table = db.open_table(TABLE_NAME)
 
+    print("Splitting data ...")
     # Split Text into Chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     documents = text_splitter.split_documents(docs)
-
-    # Generate Embeddings
-    # try:
-    #     embedding_model = SentenceTransformerEmbeddings("/dbfs/mnt/testgen-uip-gteqwen/")
-    # except:
    
-
+    print("Converting chunks to vectors ...")
     vectors = embedding_model.embed_documents([doc.page_content for doc in documents])
 
+    print("Compiling data ... ")
     # Insert into LanceDB
     data = [{"id": i, "text": doc.page_content, "vector": vec} for i, (doc, vec) in enumerate(zip(documents, vectors))]
 
+    print("Loading data to db ... ")
     # add data to lanceDB table
     table.add(data)
+
+    print("Ingestion complete!")
