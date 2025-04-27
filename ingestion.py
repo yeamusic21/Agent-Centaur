@@ -1,6 +1,6 @@
-mport os
+import os
 import lancedb
-from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from llms.embd import embedding_model
 import pyarrow as pa
@@ -17,7 +17,8 @@ def run_ingestion():
     print("Gathering docs ...")
     docs = []
     for file_ob in os.listdir("./docs"):
-        file_ob_name_only = file_ob.split(".")[0]
+        print("file: ", file_ob)
+        file_ob_name_only = file_ob[:-4]
         file_ob_txt = f"{file_ob_name_only}.txt"
         res_str = ocr("./docs/"+file_ob)
         # Open the file in write mode
@@ -33,7 +34,7 @@ def run_ingestion():
         #     docx_loader = Docx2txtLoader("./uploads"+file_ob)
         #     docs.extend(docx_loader.load())
 
-    rint("Gathering news ...")
+    print("Gathering news ...")
     articles = search_and_scrape()
     for article in articles:
         file_ob_txt = article['title']+".txt"
@@ -74,3 +75,6 @@ def run_ingestion():
     table.add(data)
 
     print("Ingestion complete!")
+
+if __name__=="__main__":
+    run_ingestion()

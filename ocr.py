@@ -2,10 +2,8 @@ import timeit # returns time in seconds
 from onnx.onnx_cpp2py_export import ONNX_ML
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
-from chain import reviser_chain
-from dotenv import load_dotenv
-load_dotenv()
-from my_utils import chunk_string
+# from dotenv import load_dotenv
+# load_dotenv()
 import torch
 
 use_gpu = False
@@ -35,7 +33,10 @@ def ocr(file_to_process):
     # load pdf
     print("-------------------------------------------------")
     print("Load doc ...")
-    doc = DocumentFile.from_images(file_to_process)
+    if file_to_process.endswith('.pdf'):
+        doc = DocumentFile.from_pdf(file_to_process)
+    else:
+        doc = DocumentFile.from_images(file_to_process)
 
     # Analyze
     print("-------------------------------------------------")
@@ -49,7 +50,7 @@ def ocr(file_to_process):
 
     # https://github.com/mindee/notebooks/blob/main/doctr/quicktour.ipynb
     print("-------------------------------------------------")
-    print("Print result...")
+    print("Get result...")
     string_result = result.render()
     # print(string_result)
 

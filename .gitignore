@@ -1,2 +1,5 @@
 .venv
 /docs
+/ocr_results
+/lancedb
+__pycache__
