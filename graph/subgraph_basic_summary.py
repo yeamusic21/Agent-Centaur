@@ -60,6 +60,20 @@ def compress_summary(input: CompressInput) -> str:
     combined = "\n\n".join(summaries)
     return llm.invoke(f"Compress the following summaries:\n\n{combined}")
 
+# def check_token_count(state):
+#     # WORK IN PROGRESS!!!!!!!!!!!!!!!!
+#     import tiktoken
+
+#     # Choose the correct encoding based on the model
+#     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")  # or "gpt-4"
+
+#     text = "This is a sample string to count tokens."
+#     tokens = encoding.encode(text)
+#     token_count = len(tokens)
+
+#     print(f"Token count: {token_count}")
+
+
 def get_docs_node(state):
     # print("the state is: ", state)
     document = get_docs.invoke(state)
@@ -88,6 +102,15 @@ def compressor_node(state):
     return {"generation": final.content}
 
 graph = StateGraph(SummarizationState)
+
+# entry point remains as get_docs_node
+# get_docs_node connects to check_token_count
+# conditional edge, if within token count then compressor_node, otherwise, move to summarizer
+# NOTE1 - splitter_node and summarizer_node should be consolidated to just summarizer_node
+# NOTE2 - summarizer_node should return a new large doc string to state attribute 'document' (not a list of summaries)
+# summarizer_node returns to check_token_count
+
+
 
 graph.add_node("getdocs", get_docs_node)
 graph.add_node("splitter", splitter_node)
