@@ -3,3 +3,4 @@
 /ocr_results
 /lancedb
 __pycache__
+env.sh

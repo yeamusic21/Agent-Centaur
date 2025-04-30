@@ -3,7 +3,7 @@
 # Supervisor Architecture
 ##########################################################
 
-from graph.subgraph_basic_summarizer import summarize_app
+from graph.subgraph_basic_summary import summarize_app
 from graph.subgraph_deep_ragResearcher import researcher_graph
 from chains.supervisorToolRouter import supervisor_router, supervisor_final_router
 from langgraph.graph import StateGraph, END
