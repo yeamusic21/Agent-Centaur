@@ -4,4 +4,6 @@ if __name__=="__main__":
     # res = summarize_app.invoke({"input":"run summary"})
     # print(res['generation'])
     res = timeline_agent.invoke({"document":"placeholder"})
-    print(res['generation'])
+    print(res['summary'])
+    with open("res.md", "w") as f:
+        f.write(res)

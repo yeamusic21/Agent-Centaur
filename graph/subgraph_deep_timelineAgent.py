@@ -120,8 +120,8 @@ def format_timeline(state: TimelineState):
 
     def parse_date_safe(date_str):
         try:
-            # Expecting format like '24-05-01' (YY-MM-DD)
-            return datetime.strptime(date_str, "%y-%m-%d")
+            # Expecting format like '2024-05-01' (YYYY-MM-DD)
+            return datetime.strptime(date_str, "%Y-%m-%d")
         except Exception:
             return datetime.min  # Invalid dates get pushed to the beginning
 
