@@ -74,9 +74,8 @@ analyst_instructions="""You are tasked with creating a set of AI analyst persona
 5. Assign one analyst to each theme."""
 
 def create_analysts(state: GenerateAnalystsState):
-    
     """ Create analysts """
-    
+    print("===== CREATE ANALYSTS =====")
     # topic=state['topic']
     topic = state['question']
     # max_analysts=state['max_analysts']
@@ -165,6 +164,7 @@ Remember to stay in character throughout your response, reflecting the persona a
 
 def generate_question(state: InterviewState):
     """ Node to generate a question """
+    print("===== GENERATE QUESTION =====")
 
     # Get state
     analyst = state["analyst"]
@@ -173,68 +173,71 @@ def generate_question(state: InterviewState):
     # Generate question 
     system_message = question_instructions.format(goals=analyst.persona)
     question = llm.invoke([SystemMessage(content=system_message)]+messages)
-        
+    print("question:", question)    
     # Write messages to state
     return {"messages": [question]}
 
 # Web search tool
-tavily_search = TavilySearchResults(max_results=3)
+# tavily_search = TavilySearchResults(max_results=3)
 
 
 
 # Search query writing
 search_instructions = SystemMessage(content=f"""You will be given a conversation between an analyst and an expert. 
 
-Your goal is to generate a well-structured query for use in retrieval and / or web-search related to the conversation.
+Your goal is to generate a well-structured query for use in retrieval related to the conversation.
         
 First, analyze the full conversation.
 
 Pay particular attention to the final question posed by the analyst.
 
-Convert this final question into a well-structured web search query""")
+Convert this final question into a well-structured retrieval query""")
 
-def search_web(state: InterviewState):
+def search_vector_db(state: InterviewState):
+    pass
+
+# def search_web(state: InterviewState):
     
-    """ Retrieve docs from web search """
+#     """ Retrieve docs from web search """
 
-    # Search query
-    structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions]+state['messages'])
+#     # Search query
+#     structured_llm = llm.with_structured_output(SearchQuery)
+#     search_query = structured_llm.invoke([search_instructions]+state['messages'])
     
-    # Search
-    search_docs = tavily_search.invoke(search_query.search_query)
+#     # Search
+#     search_docs = tavily_search.invoke(search_query.search_query)
 
-     # Format
-    formatted_search_docs = "\n\n---\n\n".join(
-        [
-            f'<Document href="{doc["url"]}"/>\n{doc["content"]}\n</Document>'
-            for doc in search_docs
-        ]
-    )
+#      # Format
+#     formatted_search_docs = "\n\n---\n\n".join(
+#         [
+#             f'<Document href="{doc["url"]}"/>\n{doc["content"]}\n</Document>'
+#             for doc in search_docs
+#         ]
+#     )
 
-    return {"context": [formatted_search_docs]} 
+#     return {"context": [formatted_search_docs]} 
 
-def search_wikipedia(state: InterviewState):
+# def search_wikipedia(state: InterviewState):
     
-    """ Retrieve docs from wikipedia """
+#     """ Retrieve docs from wikipedia """
 
-    # Search query
-    structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions]+state['messages'])
+#     # Search query
+#     structured_llm = llm.with_structured_output(SearchQuery)
+#     search_query = structured_llm.invoke([search_instructions]+state['messages'])
     
-    # Search
-    search_docs = WikipediaLoader(query=search_query.search_query, 
-                                  load_max_docs=2).load()
+#     # Search
+#     search_docs = WikipediaLoader(query=search_query.search_query, 
+#                                   load_max_docs=2).load()
 
-     # Format
-    formatted_search_docs = "\n\n---\n\n".join(
-        [
-            f'<Document source="{doc.metadata["source"]}" page="{doc.metadata.get("page", "")}"/>\n{doc.page_content}\n</Document>'
-            for doc in search_docs
-        ]
-    )
+#      # Format
+#     formatted_search_docs = "\n\n---\n\n".join(
+#         [
+#             f'<Document source="{doc.metadata["source"]}" page="{doc.metadata.get("page", "")}"/>\n{doc.page_content}\n</Document>'
+#             for doc in search_docs
+#         ]
+#     )
 
-    return {"context": [formatted_search_docs]} 
+#     return {"context": [formatted_search_docs]} 
 
 answer_instructions = """You are an expert being interviewed by an analyst.
 
