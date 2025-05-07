@@ -19,7 +19,10 @@ if __name__=="__main__":
     #     f.write(res_answer)
     ###
     docs = retrieval(query="How much did Coursera make in 2025 Q1?")
-    print(docs)
+    for doc in docs:
+        print("========================")
+        print(docs)
+        print("========================")
     print(type(docs))
     # print("relevance score - ", docs[0][1])
     # print("text- ", docs[0][0].page_content[:1000])

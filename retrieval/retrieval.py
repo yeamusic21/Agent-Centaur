@@ -9,6 +9,6 @@ def retrieval(query):
         table_name="vector_store"
     )
 
-    docs = vector_store.similarity_search_with_relevance_scores(query)
-    return docs[0][0].page_content
+    docs = vector_store.similarity_search_with_relevance_scores(query, 4)
+    return docs
 
