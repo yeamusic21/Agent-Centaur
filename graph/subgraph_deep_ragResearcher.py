@@ -52,6 +52,8 @@ class InterviewState(MessagesState):
     interview: str # Interview transcript
     sections: list # Final key we duplicate in outer state for Send() API
     question: str # question
+    messages: Annotated[list, operator.add] # Annotated[list[AnyMessage], add_messages]
+
 
 class SearchQuery(BaseModel):
     search_query: str = Field(None, description="Search query for retrieval.")
@@ -111,14 +113,17 @@ def search_vector_db(state: InterviewState):
     # Search query
     structured_llm = llm.with_structured_output(SearchQuery)
     search_query = structured_llm.invoke([search_instructions]+state['messages'])
+    print(" ---- Generated Search Query ---- ")
+    print(search_query)
     
-    # Search
+    # Search, returns a list where each value in the list is a tuple
+    # where index 0 in the tuple is a Document object and index 1 in the tuple is the relevance score
     search_docs = retrieval(search_query.search_query)
 
      # Format
     formatted_search_docs = "\n\n---\n\n".join(
         [
-            f'========== \n {doc.page_content} \n =========='
+            f'========== \n {doc[0].page_content} \n =========='
             for doc in search_docs
         ]
     )
@@ -288,7 +293,7 @@ class ResearchGraphState(TypedDict):
     conclusion: str # Conclusion for the final report
     final_report: str # Final report
     question: str # user question
-    messages: dict # Annotated[list[AnyMessage], add_messages]
+    messages: Annotated[list[AnyMessage], add_messages]
     final_answer: str
 
 
@@ -296,6 +301,8 @@ class ResearchGraphState(TypedDict):
 def initiate_all_interviews(state: ResearchGraphState):
     """ This is the "map" step where we run each interview sub-graph using Send API """    
     print("===== INTERVIEW MAP STEP =====")
+    print(" ---- Analysts ---- ")
+    print(state["analysts"])
 
     topic = state["topic"]
     return [Send("conduct_interview", {"analyst": analyst,
@@ -427,8 +434,8 @@ def finalize_report(state: ResearchGraphState):
     final_report = state["introduction"] + "\n\n---\n\n" + content + "\n\n---\n\n" + state["conclusion"]
     if sources is not None:
         final_report += "\n\n## Sources\n" + sources
-    human_msg = {"type": "human", "data": {"content": state["question"]}}
-    ai_msg = {"type": "ai", "data": {"content": final_report}}
+    human_msg = {"role": "user", "content": state["question"]}
+    ai_msg = {"role": "assistant", "content": final_report}
     messages = [human_msg, ai_msg]
     return {
         "final_report": final_report, 
@@ -523,3 +530,4 @@ builder.add_edge("finalize_report", END)
 # graph = builder.compile(interrupt_before=['human_feedback'], checkpointer=memory)
 researcher_graph = builder.compile()
 # display(Image(graph.get_graph(xray=1).draw_mermaid_png()))
+# researcher_graph.get_graph(xray=1).draw_mermaid_png(output_file_path="researcher_graph.png")
