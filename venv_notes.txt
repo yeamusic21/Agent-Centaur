@@ -5,3 +5,7 @@ python -m venv .venv
 
 Activate Env on Ubuntu:
 source ./.venv/bin/activate
+
+langfuse tracing
+cd /home/<path-to-langfuse-folder>/langfuse/
+docker compose up

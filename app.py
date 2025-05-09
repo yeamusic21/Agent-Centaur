@@ -2,9 +2,21 @@ from graph.subgraph_basic_summary import summarize_app
 from graph.subgraph_deep_timelineAgent import timeline_agent
 from graph.subgraph_deep_ragResearcher import researcher_graph
 from retrieval.retrieval import retrieval
+from langfuse.callback import CallbackHandler
+import os
+from dotenv import load_dotenv
 
 
 if __name__=="__main__":
+
+    load_dotenv()  # take environment variables
+
+    langfuse_handler = CallbackHandler(
+        public_key=os.getenv("LANGFLOW_LANGFUSE_PUBLIC_KEY"),
+        secret_key=os.getenv("LANGFLOW_LANGFUSE_SECRET_KEY"),
+        host="http://localhost:3000"
+    )
+
     ###
     # res = summarize_app.invoke({"input":"run summary"})
     # print(res['generation'])
@@ -12,7 +24,7 @@ if __name__=="__main__":
     # res = timeline_agent.invoke({"document":"placeholder"})
     # print(res['summary'])
     ###
-    res = researcher_graph.invoke({"question":"Why has Coursera stock historically trended down and is there any indication it might turn around"})
+    res = researcher_graph.invoke({"question":"Why has Coursera stock historically trended down and is there any indication it might turn around"}, config={"callbacks": [langfuse_handler]})
     res_answer = res['final_answer']
     print(res_answer)
     with open("res.md", "w") as f:
