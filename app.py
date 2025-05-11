@@ -1,6 +1,7 @@
 from graph.subgraph_basic_summary import summarize_app
 from graph.subgraph_deep_timelineAgent import timeline_agent
 from graph.subgraph_deep_ragResearcher import researcher_graph
+from graph.subgraph_basic_ragMultiAgent import ma_rag_graph
 from retrieval.retrieval import retrieval
 from langfuse.callback import CallbackHandler
 import os
@@ -24,11 +25,11 @@ if __name__=="__main__":
     # res = timeline_agent.invoke({"document":"placeholder"})
     # print(res['summary'])
     ###
-    res = researcher_graph.invoke({"question":"Why has Coursera stock historically trended down and is there any indication it might turn around"}, config={"callbacks": [langfuse_handler]})
-    res_answer = res['final_answer']
-    print(res_answer)
-    with open("res.md", "w") as f:
-        f.write(res_answer)
+    # res = researcher_graph.invoke({"question":"Why has Coursera stock historically trended down and is there any indication it might turn around"}, config={"callbacks": [langfuse_handler]})
+    # res_answer = res['final_answer']
+    # print(res_answer)
+    # with open("res.md", "w") as f:
+    #     f.write(res_answer)
     ###
     # docs = retrieval(query="How much did Coursera make in 2025 Q1?")
     # for doc in docs:
@@ -38,3 +39,14 @@ if __name__=="__main__":
     # print(type(docs))
     # print("relevance score - ", docs[0][1])
     # print("text- ", docs[0][0].page_content[:1000])
+    ###
+    # question = "Why has Coursera stock historically trended down and is there any indication it might turn around"
+    question = "how much did Coursera make in 2025 Q1?"
+    state_dict = {
+        "question":question,
+        "max_sub_questions": 10,
+
+    }
+    res = ma_rag_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
+    res_answer = res['subquestions']
+    print(res_answer)
