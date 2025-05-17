@@ -40,13 +40,13 @@ if __name__=="__main__":
     # print("relevance score - ", docs[0][1])
     # print("text- ", docs[0][0].page_content[:1000])
     ###
-    # question = "Why has Coursera stock historically trended down and is there any indication it might turn around"
-    question = "how much did Coursera make in 2025 Q1?"
+    question = "Why has Coursera stock historically trended down and is there any indication it might turn around"
+    # question = "how much did Coursera make in 2025 Q1?"
     state_dict = {
         "question":question,
         "max_sub_questions": 10,
 
     }
     res = ma_rag_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
-    res_answer = res['subquestions']
+    res_answer = res['context']
     print(res_answer)

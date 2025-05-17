@@ -27,10 +27,13 @@ class MainState(TypedDict):
     max_sub_questions: int # Number of sub-questions
     question: str # user question
     subquestions: List[str] # List of sub-questions
+    subquestion: str # Current sub-question
+    index: int # Index of the current sub-question
+    context: Annotated[List[str], "accumulate"] # Contexts from the retrieval step
 
 
 def create_sub_questions(state: MainState):
-    """ Create analysts """
+    """ Create questions based on the research topic """
     print("===== CREATE QUESTIONS =====")
 
     class SubQuestions(BaseModel):
@@ -42,13 +45,15 @@ def create_sub_questions(state: MainState):
 
     1. First, review the research topic:
     {topic}
+
+    2. Determine the complexity of the research topic.
+        - If the research topic is simple, create a single sub-question.
+            - Examples of simple quesions that probably don't need to be broken up into >1 sub-question:
+                    - "How much did Coursera make in 2025 Q1?"
+        - If the research topic is made up of X number of simple questions, create X sub-questions.
+        - If the research topic is complex, break it down into multiple sub-questions.
         
     2. Break the question down into sub-questions based on the research topic.
-        - For example, maybe the research topic contains 2 separate questions that could be broken up into sub-questions. 
-        - For example, maybe the research topic contains 1 complex question that could be broken up into 4 sub-questions.
-        - For example, maybe the research topic contains 1 simple question that doesn't need to be broken up, resulting in just 1 sub-question.
-            - Examples of simple quesions that probably don't need to be broken up into >1 sub-question:
-                - "How much did Coursera make in 2025 Q1?"
                         
     3. Don't create more than {max_sub_questions} sub-questions.
         - Note that creating unnecessary sub-questions will only increase latency and cost, so it is ideal to think and only create sub-questions that are necessary to answer the topic.
@@ -70,10 +75,44 @@ def create_sub_questions(state: MainState):
     # Write the list of analysis to state
     return {"subquestions": subquestions.subquestions, "topic": topic}
 
+def initiate_retrievals(state: MainState):
+    """ This is the "map" step where we run each retrieval using Send API """    
+    print("===== RETRIEVAL MAP STEP =====")
+    print(state["subquestions"])
+    return [Send("search_vector_db", {"subquestion": subquestion}) for subquestion in state["subquestions"]]
+
+    
+def search_vector_db(state: MainState):
+    print("===== SEARCH VECTOR DB (I.E. RETRIEVAL) =====")
+    
+    # Search, returns a list where each value in the list is a tuple
+    # where index 0 in the tuple is a Document object and index 1 in the tuple is the relevance score
+    search_docs = retrieval(state["subquestion"])
+
+     # Format
+    # formatted_search_docs = "\n\n---\n\n".join(
+    #     [
+    #         f'========== \n {doc[0].page_content} \n =========='
+    #         for doc in search_docs
+    #     ]
+    # )
+
+    return {"context": [doc[0].page_content for doc in search_docs]}
+
+def join_contexts(states: List[MainState]) -> MainState:
+    # 'states' is a list of outputs from search_vector_db
+    # LangGraph will automatically merge 'context' because it's Annotated[List[str], "accumulate"]
+    return {}  # Let LangGraph handle the accumulation
+
+
 ma_rag_builder = StateGraph(MainState)
 ma_rag_builder.add_node("create_sub_questions", create_sub_questions)
+ma_rag_builder.add_node("search_vector_db", search_vector_db)
+ma_rag_builder.add_node("join_contexts", join_contexts)
 
 ma_rag_builder.add_edge(START, "create_sub_questions")
-ma_rag_builder.add_edge("create_sub_questions", END)
+ma_rag_builder.add_conditional_edges("create_sub_questions", initiate_retrievals)
+ma_rag_builder.add_edge("search_vector_db", "join_contexts")
+ma_rag_builder.add_node("join_contexts", join_contexts, join=True)
 
 ma_rag_graph = ma_rag_builder.compile()
