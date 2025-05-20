@@ -149,4 +149,4 @@ graph.add_edge("compressor", END)
 
 summarize_app = graph.compile()
 
-summarize_app.get_graph(xray=1).draw_mermaid_png(output_file_path="summarize_app.png")
+# summarize_app.get_graph(xray=1).draw_mermaid_png(output_file_path="summarize_app.png")

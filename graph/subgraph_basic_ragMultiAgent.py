@@ -12,7 +12,6 @@ from langgraph.graph import MessagesState
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.document_loaders import WikipediaLoader
 from langchain_core.messages import get_buffer_string
-import operator
 from typing import List, Annotated
 from typing_extensions import TypedDict
 from langgraph.constants import Send
@@ -29,7 +28,8 @@ class MainState(TypedDict):
     subquestions: List[str] # List of sub-questions
     subquestion: str # Current sub-question
     index: int # Index of the current sub-question
-    context: Annotated[List[str], "accumulate"] # Contexts from the retrieval step
+    context: Annotated[list, operator.add] 
+    final_answer: str # Final answer
 
 
 def create_sub_questions(state: MainState):
@@ -90,29 +90,39 @@ def search_vector_db(state: MainState):
     search_docs = retrieval(state["subquestion"])
 
      # Format
-    # formatted_search_docs = "\n\n---\n\n".join(
-    #     [
-    #         f'========== \n {doc[0].page_content} \n =========='
-    #         for doc in search_docs
-    #     ]
-    # )
+    formatted_search_docs = "\n\n---\n\n".join(
+        [
+            f'========== \n {doc[0].page_content} \n =========='
+            for doc in search_docs
+        ]
+    )
 
-    return {"context": [doc[0].page_content for doc in search_docs]}
+    return {"context": [formatted_search_docs]}
 
-def join_contexts(states: List[MainState]) -> MainState:
-    # 'states' is a list of outputs from search_vector_db
-    # LangGraph will automatically merge 'context' because it's Annotated[List[str], "accumulate"]
-    return {}  # Let LangGraph handle the accumulation
+def generate_answer(state: MainState):
+    """ Generate the final answer """
+    print("===== GENERATE FINAL ANSWER =====")
+    # Combine all the context
+    context = "\n\n".join([x for x in state["context"]])
+    
+    # System message
+    system_message = f"Answer the question based on the following context:\n\n{context}\n\nQuestion: {state['question']}"
+    
+    # Generate answer
+    answer = llm.invoke([SystemMessage(content=system_message)]+[HumanMessage(content="Generate the final answer.")])
+    # answer = llm.invoke(system_message)
+    
+    return {"final_answer": answer}
 
 
 ma_rag_builder = StateGraph(MainState)
 ma_rag_builder.add_node("create_sub_questions", create_sub_questions)
 ma_rag_builder.add_node("search_vector_db", search_vector_db)
-ma_rag_builder.add_node("join_contexts", join_contexts)
+ma_rag_builder.add_node("generate_answer", generate_answer)
 
 ma_rag_builder.add_edge(START, "create_sub_questions")
 ma_rag_builder.add_conditional_edges("create_sub_questions", initiate_retrievals)
-ma_rag_builder.add_edge("search_vector_db", "join_contexts")
-ma_rag_builder.add_node("join_contexts", join_contexts, join=True)
+ma_rag_builder.add_edge("search_vector_db", "generate_answer")
+ma_rag_builder.add_edge("generate_answer", END)
 
 ma_rag_graph = ma_rag_builder.compile()

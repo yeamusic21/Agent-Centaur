@@ -48,5 +48,5 @@ if __name__=="__main__":
 
     }
     res = ma_rag_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
-    res_answer = res['context']
+    res_answer = res['final_answer']
     print(res_answer)
