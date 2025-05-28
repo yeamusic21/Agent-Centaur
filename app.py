@@ -2,6 +2,7 @@ from graph.subgraph_basic_summary import summarize_app
 from graph.subgraph_deep_timelineAgent import timeline_agent
 from graph.subgraph_deep_ragResearcher import researcher_graph
 from graph.subgraph_basic_ragMultiAgent import ma_rag_graph
+from graph.main_react_graph import react_agent_graph
 from retrieval.retrieval import retrieval
 from langfuse.callback import CallbackHandler
 import os
@@ -39,14 +40,24 @@ if __name__=="__main__":
     # print(type(docs))
     # print("relevance score - ", docs[0][1])
     # print("text- ", docs[0][0].page_content[:1000])
+    # ###
+    # question = "Why has Coursera stock historically trended down and is there any indication it might turn around"
+    # # question = "how much did Coursera make in 2025 Q1?"
+    # state_dict = {
+    #     "question":question,
+    #     "max_sub_questions": 10,
+
+    # }
+    # res = ma_rag_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
+    # res_answer = res['final_answer']
+    # print(res_answer)
     ###
     question = "Why has Coursera stock historically trended down and is there any indication it might turn around"
     # question = "how much did Coursera make in 2025 Q1?"
     state_dict = {
-        "question":question,
-        "max_sub_questions": 10,
+        "question":question
 
     }
-    res = ma_rag_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
-    res_answer = res['final_answer']
+    res = react_agent_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
+    res_answer = res['next_node']
     print(res_answer)
