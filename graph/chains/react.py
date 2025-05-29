@@ -27,6 +27,7 @@ Question: the input question you must answer
 Thought: you should always think about what to do
 Action: the action to take, should be one of [rag-multi-agent, summarizer, and timeline-agent]
 Action Input: the input to the action
+PAUSE. At this point, stop.  You will be called again and the observation from the action will be provided to you.
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
