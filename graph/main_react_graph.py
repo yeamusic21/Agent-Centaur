@@ -11,15 +11,18 @@ from graph.chains.react import react_chain
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, AIMessage
 from typing_extensions import TypedDict, List
+from typing import  Annotated
+import operator
+import re
 
 # --- State with loop tracking ---
 class AgentState(TypedDict):
     question: str
-    messages: List[str]
+    messages: Annotated[list, operator.add] 
     loop_count: int
     is_answered: bool
     next_node: str
-    next_step: str
+    next_input: str
 
 
 # # --- Tool / Node Agents ---
@@ -130,27 +133,95 @@ class AgentState(TypedDict):
 # supervisor_graph = builder.compile()
 
 
-#############################################3
-# BOOKMARK
-# - This worked, except it didn't have the PAUSE to actually run the agent
-#   so it hallucinated the calls and moved on to next steps without actually stopping to run an agent
-#   in short, need to work in a PAUSE.
-
-
 def react(state: AgentState):
-    state["next_node"] = react_chain.invoke(
+    print("===React Node===")
+    res = react_chain.invoke(
         {
             "question": state["question"]
         }
     )
+    print("res type: ", type(res))
+    if state["loop_count"] == 0:
+        messages = [HumanMessage(content=state["question"]), res]
+    else:
+        messages = [res]
+    new_loop_count = state["loop_count"] + 1
+    return {"messages": messages, "loop_count": new_loop_count}
+
+def get_action_and_input(text):
+    # Extract using regular expressions
+    action_match = re.search(r"Action:\s*(.+)", text)
+    action_input_match = re.search(r"Action Input:\s*(.+)", text)
+
+    action = action_match.group(1) if action_match else None
+    action_input = action_input_match.group(1) if action_input_match else None
+    return action, action_input
+
+def router(state: AgentState):
+    print("===Router Decision===")
+    last_ai_message = state["messages"][-1].content
+    action, action_input = get_action_and_input(last_ai_message)
+    if "rag-multi-agent" in action:
+        next_node = "ma_rag_graph"
+    if "summarizer" in action:
+        next_node= "summarize_app_agent"
+    if "timeline-agent" in action:
+        next_node = "timeline_agent"
+    if "Final Answer" in last_ai_message:
+        next_node = "end"
+    return {"next_node": next_node, "next_input": action_input}
+
+def router_decision(state: AgentState):
+    print("===Router Decision===")
+    print(state["next_node"])
+    return state["next_node"]
+
+def summarize_agent_node(state: AgentState):
+    print("===Summarize Agent===")
+    # result = summarize_app.invoke({"question": state["next_input"]}).get('generation')
+    result = """Observation: This is a placeholder for the summarize_app agent's response. Thought: I now know the final answer
+                Final Answer: the final answer to the original input question"""
+    state["messages"].append(AIMessage(content=result))
+    return state
+
+def rag_multiagent_node(state: AgentState):
+    print("===RAG Multi-Agent===")
+    # result = ma_rag_graph.invoke({"question": state["next_input"]}).get('final_answer')
+    result = """Observation: This is a placeholder for the RAG multi-agent's response.Thought: I now know the final answer
+                Final Answer: the final answer to the original input question"""
+    state["messages"].append(AIMessage(content=result))
+    return state
+
+def timeline_agent_node(state: AgentState):
+    print("===Timeline Agent===")
+    # result = timeline_agent.invoke({"document": state["next_input"]}).get('summary')
+    result = """Observation: This is a placeholder for the timeline agent's response.Thought: I now know the final answer
+                Final Answer: the final answer to the original input question"""
+    state["messages"].append(AIMessage(content=result))
     return state
 
 builder = StateGraph(AgentState)
 
 builder.add_node("react", react)
+builder.add_node("router", router)
+builder.add_node("summarize_app_agent", summarize_agent_node)
+builder.add_node("ma_rag_graph", rag_multiagent_node)
+builder.add_node("timeline_agent", timeline_agent_node)
 
 builder.set_entry_point("react")
-builder.add_edge("react", END)
+builder.add_edge("react", "router")
+builder.add_conditional_edges("router", router_decision, {
+    "summarize_app_agent": "summarize_app_agent",
+    "ma_rag_graph": "ma_rag_graph",
+    "timeline_agent": "timeline_agent",
+    "end": END
+})
+
+#############################################3
+# BOOKMARK
+# - loop back around
+# - increment loop count
+# - if answered, go to generate node
 
 react_agent_graph = builder.compile()
 
