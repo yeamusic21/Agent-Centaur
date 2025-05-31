@@ -5,12 +5,16 @@
 
 ##### 
 # Road Map
-    - Create a Supervisor Agent (as tools) architecture
-    - Include "tools" such as ... 
+    - Create a Subgraph ReAct Agent architecture
+    - Include agents such as ... 
         - Converse
         - Reflection
-        - Basic RAG
+        - Multi-agent RAG
         - Basic Summarization
         - Storm Researcher
         - Timeline Extractor (using Map Extract)
+
+# What is a Subgraph ReAct Agent
+ - Subgraph ReAct agent is a ReAct agent that has subgraphs at it's disposal instead of, or in addition to, tools.
+ - Each subgraph is a standalone agent that can be leveraged in the ReAct flow.
 

@@ -55,10 +55,9 @@ if __name__=="__main__":
     question = "Why has Coursera stock historically trended down and is there any indication it might turn around"
     # question = "how much did Coursera make in 2025 Q1?"
     state_dict = {
-        "question":question,
+        "question": question,
         "loop_count": 0,
-
     }
     res = react_agent_graph.invoke(state_dict, config={"callbacks": [langfuse_handler]})
-    res_answer = res['messages'][-1].content
+    res_answer = res['final_answer']
     print(res_answer)

@@ -24,6 +24,7 @@ timeline-agent - an agent that can create retrieve data and create timelines bas
 Use the following format:
 
 Question: the input question you must answer
+History: the history of the conversation, including previous questions and answers
 Thought: you should always think about what to do
 Action: the action to take, should be one of [rag-multi-agent, summarizer, and timeline-agent]
 Action Input: the input to the action
@@ -39,7 +40,7 @@ Begin!
 answer_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", system),
-        ("human", "Question: {question}"),
+        ("human", "Question: {question} \nHistory: {history}"),
     ]
 )
 
