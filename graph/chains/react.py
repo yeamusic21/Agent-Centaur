@@ -40,7 +40,7 @@ Begin!
 answer_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", system),
-        ("human", "Question: {question} \nHistory: {history}"),
+        ("human", "Question: {question} \n {react_history}"),
     ]
 )
 
