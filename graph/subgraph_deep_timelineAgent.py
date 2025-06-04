@@ -13,13 +13,15 @@ from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, END
 import os
 from llms.llms import llm_4o as llm
+from retrieval.retrieval import retrieval
 
 # 1. Define the state for the LangGraph agent
 class TimelineState(BaseModel):
     """
     State for the timeline summarization agent.
     """
-    document: str = Field(..., description="The large document to summarize.")
+    query: str = Field(..., description="Query for pulling information to summarize.")
+    document: str = Field(..., description="Concatenation of query results to be processed.")
     timeline_events: List[Dict[str, str]] = Field(default_factory=list, description="List of extracted timeline events.")
     summary: Optional[str] = Field(None, description="The final timeline summary.")
     chunks: List[Document]  = Field(None, description="Document split into chunks.")
@@ -37,12 +39,14 @@ class TimelineEvent(BaseModel):
 
 def get_docs(state):
     print("===== GET DOC =====")
-    large_document = ""
-    for file_ob in os.listdir("./ocr_results"):
-        with open(f"./ocr_results/{file_ob}", 'r') as file:
-            # Read the entire content of the file
-            content = file.read()
-            large_document += content
+    # large_document = ""
+    # for file_ob in os.listdir("./ocr_results"):
+    #     with open(f"./ocr_results/{file_ob}", 'r') as file:
+    #         # Read the entire content of the file
+    #         content = file.read()
+    #         large_document += content
+    docs = retrieval(query=state.query, tot_results=20)
+    large_document = "\n".join([doc[0].page_content for doc in docs])
     return {"document": large_document}
 
 def load_and_split_document(state: TimelineState):

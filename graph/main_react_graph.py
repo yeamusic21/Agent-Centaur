@@ -32,7 +32,7 @@ def compile_and_format_history(state: AgentState):
     """
     history = ""
     for i, message in enumerate(state["messages"]):
-        history += f" ({message.content}) \n"
+        history += f" {message.content} \n"
     return history.strip()
 
 def react(state: AgentState):
@@ -90,7 +90,7 @@ def router_decision(state: AgentState):
 
 def summarize_agent_node(state: AgentState):
     print("===Summarize Agent===")
-    result = summarize_app.invoke({"input": state["next_input"]}).get('generation')
+    result = summarize_app.invoke({"query": state["next_input"]}).get('generation')
     result = f"Observation: {result}"
     history = state.get("history", "") + result + "\n"
     return {"messages": [AIMessage(content=result)], "history": history}
@@ -104,7 +104,7 @@ def rag_multiagent_node(state: AgentState):
 
 def timeline_agent_node(state: AgentState):
     print("===Timeline Agent===")
-    result = timeline_agent.invoke({"document": state["next_input"]}).get('summary')
+    result = timeline_agent.invoke({"query": state["next_input"], "document":"placeholder"}).get('summary')
     result = f"Observation: {result}"
     history = state.get("history", "") + result + "\n"
     return {"messages": [AIMessage(content=result)], "history": history}
@@ -149,8 +149,9 @@ builder.add_edge("generate", END)
 # - if answered, go to generate node [x]
 # - replace placeholders in agent nodes with actual agent calls [x]
 #     - generage node should concatenate all messages (or maybe just the subgraph responses) and return the final answer [x]
-# - Agent runs!  Hooray!  But it needs some work.  1 run cost $0.5 and took 7 minutes.  
-#     - Summary & timeline agents don't take the ReAct generated input, we should fix that (would save a lot of tokens)
+# - Agent runs!  Hooray!  But it needs some work.  1 run cost $0.5 and took 7 minutes.  [x]
+#     - Summary & timeline agents don't take the ReAct generated input, we should fix that (would save a lot of tokens) [x]
+# - Clean up the code, remove unused imports, convert tools to functions or nodes, remove placeholders, fix states, etc.
 
 react_agent_graph = builder.compile()
 

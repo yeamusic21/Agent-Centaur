@@ -12,9 +12,10 @@ from pydantic import BaseModel
 import tiktoken
 from llms.llms import llm, llm_4o
 from concurrent.futures import ThreadPoolExecutor
+from retrieval.retrieval import retrieval
 
 class SummarizationState(TypedDict):
-    question: str
+    query: str
     document: str
     chunks: List[str]
     summaries: List[str]
@@ -25,17 +26,19 @@ class CompressInput(BaseModel):
     summaries: str
 
 @tool
-def get_docs() -> str:
+def get_docs(state) -> str:
     """
     grabs all doc text and returns as 1 large string
     """
-    large_document = ""
-    for file_ob in os.listdir("./ocr_results"):
-        with open(f"./ocr_results/{file_ob}", 'r') as file:
-            # Read the entire content of the file
-            content = file.read()
-        content_w_space = " " + content
-        large_document += content_w_space
+    # large_document = ""
+    # for file_ob in os.listdir("./ocr_results"):
+    #     with open(f"./ocr_results/{file_ob}", 'r') as file:
+    #         # Read the entire content of the file
+    #         content = file.read()
+    #     content_w_space = " " + content
+    #     large_document += content_w_space
+    docs = retrieval(query=state["query"], tot_results=20)
+    large_document = "\n".join([doc[0].page_content for doc in docs])
     return large_document
 
 @tool
